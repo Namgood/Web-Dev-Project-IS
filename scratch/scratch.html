@@ -174,10 +174,30 @@ function nestExistsNearHome(w) {
 
 function updateWasps() {
     const now = Date.now();
-    const HOME_RADIUS = 30;
+    const HOME_RADIUS = 40;
+
+    // ── nest aggro: only wasps whose home is close to the triggered nest ──
+    for (let n of nests) {
+        if (grid[n.y]?.[n.x] !== n.type) continue;
+        let dx = player.x - n.x;
+        let dy = player.y - n.y;
+        let trigger = (n.type === 1) ? 8 : 5;
+        if (Math.sqrt(dx*dx + dy*dy) <= trigger) {
+            // only wake up wasps that spawned near THIS nest (within 20 blocks)
+            wasps.forEach(w => {
+                if (!w.chasing) {
+                    let homeDist = Math.sqrt((w.homeX - n.x)**2 + (w.homeY - n.y)**2);
+                    if (homeDist <= 20) {
+                        w.chasing = true;
+                        w.targetNest = n;
+                    }
+                }
+            });
+        }
+    }
 
     wasps.forEach(w => {
-        // ── universal hard leash: always stop chasing if > 30 from home ──
+        // ── universal hard leash: stop chasing if > 40 from home ──
         let distFromHome = Math.sqrt((w.x - w.homeX) ** 2 + (w.y - w.homeY) ** 2);
         if (distFromHome > HOME_RADIUS) {
             w.chasing = false;
@@ -200,28 +220,11 @@ function updateWasps() {
             }
         }
 
-        // aggro 1: player walks close to THIS wasp individually
+        // aggro 1: player is within 7 blocks of THIS wasp personally
         if (!w.chasing) {
-            let distToWasp = Math.abs(player.x - w.x) + Math.abs(player.y - w.y);
-            let personalSpace = (w.type === 1) ? 4 : 3;
-            if (distToWasp <= personalSpace) {
+            let distToWasp = Math.sqrt((player.x - w.x) ** 2 + (player.y - w.y) ** 2);
+            if (distToWasp <= 7) {
                 w.chasing = true;
-            }
-        }
-
-        // aggro 2: player walks close to a nest tile
-        if (!w.chasing) {
-            for (let n of nests) {
-                if (grid[n.y]?.[n.x] !== n.type) continue; // nest tile already gone
-                let dx = player.x - n.x;
-                let dy = player.y - n.y;
-                let distToNest = Math.sqrt(dx * dx + dy * dy);
-                let trigger = (n.type === 1) ? 8 : 5;
-                if (distToNest <= trigger) {
-                    w.chasing = true;
-                    w.targetNest = n;
-                    break;
-                }
             }
         }
 
