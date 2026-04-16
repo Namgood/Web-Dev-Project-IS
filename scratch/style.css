@@ -244,3 +244,28 @@ footer {
     font-size: 0.85rem;
     margin-top: 80px;
 }
+#game-section {
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 0 30px;
+    text-align: center;
+}
+
+#gameCanvas {
+    background: black;
+    width: 500px; /* scaled up */
+    height: 500px;
+    image-rendering: pixelated;
+    border: 3px solid #f5c400;
+}
+
+#game-ui p {
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    background: #f5c400;
+    border: none;
+    cursor: pointer;
+}

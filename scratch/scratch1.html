@@ -8,10 +8,7 @@
 </head>
 <script>
 const size = 200;
-const MAX_LIVES = 10;
 let grid, player, nests, wasps, lives, gameRunning;
-let lastHitTime = 0;
-let lastRegenTime = 0;
 let keys = {};
 
 function startGame() {
@@ -23,14 +20,11 @@ function startGame() {
     player = { x: 100, y: 100 };
     nests = [];
     wasps = [];
-    lives = MAX_LIVES;
-    lastHitTime = Date.now();
-    lastRegenTime = Date.now();
+    lives = 3;
     gameRunning = true;
 
     generateNests();
     spawnInitialWasps();
-    updateHUD();
 
     loop();
 }
@@ -79,16 +73,6 @@ function trySpawnWasp(x, y, type) {
     });
 }
 
-function updateHUD() {
-    const bar = document.getElementById("lives-bar");
-    if (!bar) return;
-    let html = "";
-    for (let i = 0; i < MAX_LIVES; i++) {
-        html += `<span style="color:${i < lives ? '#e05' : '#555'}; font-size:14px;">♥</span>`;
-    }
-    bar.innerHTML = html;
-}
-
 // INPUT (instant + diagonal)
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
@@ -121,140 +105,100 @@ function movePlayer() {
 }
 
 function shovel() {
-    // 2-block radius: all tiles within 2 steps in x and y
-    for (let dy = -2; dy <= 2; dy++) {
-        for (let dx = -2; dx <= 2; dx++) {
-            if (dx === 0 && dy === 0) continue;
+    const directions = [
+        [-1, -1], [0, -1], [1, -1],
+        [-1,  0],          [1,  0],
+        [-1,  1], [0,  1], [1,  1],
+    ];
 
-            let x = player.x + dx;
-            let y = player.y + dy;
+    directions.forEach(([dx, dy]) => {
+        let x = player.x + dx;
+        let y = player.y + dy;
 
-            if (x < 0 || y < 0 || x >= size || y >= size) continue;
+        // bounds check
+        if (x < 0 || y < 0 || x >= size || y >= size) return;
 
-            if (grid[y][x] === 1 || grid[y][x] === 2) {
-                let type = grid[y][x];
-                grid[y][x] = 0;
+        // only remove BAD nests (not mud daubers)
+        if (grid[y][x] === 1 || grid[y][x] === 2) {
+            let type = grid[y][x];
+            grid[y][x] = 0;
 
-                // spawn wasps after 0.35s delay
-                for (let i = 0; i < 3; i++) {
-                    let sx = x + Math.floor(Math.random() * 10 - 5);
-                    let sy = y + Math.floor(Math.random() * 10 - 5);
+            // spawn wasps AWAY from the destroyed tile
+            for (let i = 0; i < 3; i++) {
+                let sx = x + Math.floor(Math.random() * 10 - 5);
+                let sy = y + Math.floor(Math.random() * 10 - 5);
 
-                    if (sx >= 0 && sy >= 0 && sx < size && sy < size && grid[sy][sx] === 0) {
-                        (function(spawnX, spawnY, spawnType) {
-                            setTimeout(() => {
-                                if (gameRunning) trySpawnWasp(spawnX, spawnY, spawnType);
-                            }, 350);
-                        })(sx, sy, type);
-                    }
+                if (
+                    sx >= 0 && sy >= 0 &&
+                    sx < size && sy < size &&
+                    grid[sy][sx] === 0
+                ) {
+                    trySpawnWasp(sx, sy, type);
                 }
             }
         }
-    }
+    });
 }
 
 document.addEventListener("keydown", e => {
     if (e.key === "m" && gameRunning) shovel();
 });
 
-function nestExistsNearHome(w) {
-    // wasp dies if no tiles of its type remain within 15 blocks of its spawn point
-    let r = 15;
-    for (let dy = -r; dy <= r; dy++) {
-        for (let dx = -r; dx <= r; dx++) {
-            let nx = w.homeX + dx;
-            let ny = w.homeY + dy;
-            if (nx >= 0 && ny >= 0 && nx < size && ny < size) {
-                if (grid[ny][nx] === w.type) return true;
-            }
-        }
-    }
-    return false;
-}
-
 function updateWasps() {
-    const now = Date.now();
-    const HOME_RADIUS = 30;
-
     wasps.forEach(w => {
-        // ── universal hard leash: always stop chasing if > 30 from home ──
-        let distFromHome = Math.sqrt((w.x - w.homeX) ** 2 + (w.y - w.homeY) ** 2);
-        if (distFromHome > HOME_RADIUS) {
-            w.chasing = false;
-            w.targetNest = null;
-        }
+        // swarm behavior (orbit/random around home)
+        let distToHome = Math.abs(w.x - w.homeX) + Math.abs(w.y - w.homeY);
 
         if (!w.chasing) {
-            // drift back toward home if outside patrol radius
-            if (distFromHome > HOME_RADIUS * 0.6) {
-                if (w.x > w.homeX) w.x--;
-                else if (w.x < w.homeX) w.x++;
-                if (w.y > w.homeY) w.y--;
-                else if (w.y < w.homeY) w.y++;
-            } else {
-                // idle random wander
-                if (Math.random() < 0.3) {
-                    w.x += Math.floor(Math.random() * 3 - 1);
-                    w.y += Math.floor(Math.random() * 3 - 1);
-                }
+            if (Math.random() < 0.3) {
+                w.x += Math.floor(Math.random()*3 - 1);
+                w.y += Math.floor(Math.random()*3 - 1);
             }
         }
 
-        // aggro 1: player walks close to THIS wasp individually
-        if (!w.chasing) {
-            let distToWasp = Math.abs(player.x - w.x) + Math.abs(player.y - w.y);
-            let personalSpace = (w.type === 1) ? 4 : 3;
-            if (distToWasp <= personalSpace) {
+        // trigger aggro based on player distance to ANY nest
+        for (let n of nests) {
+            let dx = player.x - n.x;
+            let dy = player.y - n.y;
+            let distToNest = Math.sqrt(dx*dx + dy*dy);
+        
+            let trigger = (n.type === 1) ? 5 : 3;     // start chasing
+            let leash   = (n.type === 1) ? 20 : 15;   // stop chasing
+        
+            // START chasing
+            if (!w.chasing && distToNest <= trigger) {
                 w.chasing = true;
+                w.targetNest = n;
             }
-        }
-
-        // aggro 2: player walks close to a nest tile
-        if (!w.chasing) {
-            for (let n of nests) {
-                if (grid[n.y]?.[n.x] !== n.type) continue; // nest tile already gone
-                let dx = player.x - n.x;
-                let dy = player.y - n.y;
-                let distToNest = Math.sqrt(dx * dx + dy * dy);
-                let trigger = (n.type === 1) ? 8 : 5;
-                if (distToNest <= trigger) {
-                    w.chasing = true;
-                    w.targetNest = n;
-                    break;
+        
+            // STOP chasing if too far from nest
+            if (w.chasing && w.targetNest === n) {
+                let dx2 = w.x - n.x;
+                let dy2 = w.y - n.y;
+                let distFromNest = Math.sqrt(dx2*dx2 + dy2*dy2);
+            
+                if (distFromNest > leash) {
+                    w.chasing = false;
+                    w.targetNest = null;
                 }
             }
         }
 
-        // chasing movement
+        // slower chasing
         if (w.chasing && Math.random() < 0.5) {
             if (player.x > w.x) w.x++;
-            else if (player.x < w.x) w.x--;
+            if (player.x < w.x) w.x--;
             if (player.y > w.y) w.y++;
-            else if (player.y < w.y) w.y--;
+            if (player.y < w.y) w.y--;
         }
 
-        // collision = lose a life
+        // collision
         if (w.x === player.x && w.y === player.y) {
             lives--;
-            lastHitTime = Date.now();
-            lastRegenTime = Date.now();
-            updateHUD();
             w.chasing = false;
             if (lives <= 0) endGame(false);
         }
     });
-
-    // remove wasps whose home nest cluster is fully destroyed
-    wasps = wasps.filter(w => nestExistsNearHome(w));
-
-    // heart regen: 3s after last hit, then +1 every 0.5s
-    if (lives < MAX_LIVES && (now - lastHitTime) > 3000) {
-        if ((now - lastRegenTime) > 500) {
-            lives++;
-            lastRegenTime = now;
-            updateHUD();
-        }
-    }
 }
 
 function checkWin() {
@@ -275,8 +219,8 @@ function draw() {
 
     for (let y=0;y<size;y++){
         for (let x=0;x<size;x++){
-            if (grid[y][x]===1) ctx.fillStyle="#ffff00";
-            else if (grid[y][x]===2) ctx.fillStyle="#ff9900";
+            if (grid[y][x]===1) ctx.fillStyle="#ffff00"; // nest yellow
+            else if (grid[y][x]===2) ctx.fillStyle="#ff9900"; // nest orange
             else if (grid[y][x]===3) ctx.fillStyle="#888888";
             else continue;
 
@@ -284,9 +228,11 @@ function draw() {
         }
     }
 
+    // player (1 pixel now)
     ctx.fillStyle="white";
     ctx.fillRect(player.x, player.y,1,1);
 
+    // wasps (slightly different colors)
     wasps.forEach(w=>{
         ctx.fillStyle = (w.type===1) ? "#cccc00" : "#cc6600";
         ctx.fillRect(w.x,w.y,1,1);
@@ -511,7 +457,7 @@ function loop() {
     <div id="game-section">
     <h2>Wasp Game</h2>
 
-    <div id="game-ui" style="display:flex;flex-direction:column;align-items:center;">
+    <div id="game-ui">
         <div id="intro-screen">
             <p>
                 You are helping someone get rid of wasps in their backyard. 
@@ -522,7 +468,6 @@ function loop() {
             <button onclick="startGame()">Start</button>
         </div>
 
-        <div id="lives-bar" style="background:#444;width:200px;padding:4px 6px;border-radius:4px 4px 0 0;letter-spacing:2px;min-height:22px;text-align:center;margin:0 auto;"></div>
         <canvas id="gameCanvas" width="200" height="200"></canvas>
 
         <div id="end-screen" style="display:none;">
