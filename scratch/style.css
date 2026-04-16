@@ -1,0 +1,246 @@
+/* ── Reset ── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── Base ── */
+body {
+    background-color: #1a1a0e;
+    font-family: 'Georgia', serif;
+    color: #e8e0c8;
+    line-height: 1.7;
+}
+
+/* ── Navigation ── */
+#top-nav {
+    background-color: #2e2a00;
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid #f5c400;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+#top-nav .site-title {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 1.4rem;
+    color: #f5c400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+#top-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 28px;
+}
+
+#top-nav ul li a {
+    color: #e8e0c8;
+    text-decoration: none;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+}
+
+#top-nav ul li a:hover {
+    color: #f5c400;
+}
+
+/* ── Hero ── */
+#hero {
+    background: linear-gradient(135deg, #2e2a00 0%, #1a1a0e 60%, #3a1a00 100%);
+    text-align: center;
+    padding: 80px 20px 60px;
+    border-bottom: 2px solid #f5c400;
+}
+
+#hero h1 {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 3.8rem;
+    color: #f5c400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(245, 196, 0, 0.4);
+}
+
+#hero .subtitle {
+    font-family: 'Georgia', serif;
+    font-size: 1.1rem;
+    color: #bfb89a;
+    margin-top: 12px;
+    font-style: italic;
+}
+
+#hero img {
+    margin-top: 30px;
+    width: 340px;
+    max-width: 90%;
+    border: 4px solid #f5c400;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(245, 196, 0, 0.25);
+}
+
+/* ── Sections ── */
+#intro,
+#species,
+#aggression,
+#video-section,
+#tableau-section {
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 0 30px;
+}
+
+/* ── Section headings ── */
+h2 {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 2rem;
+    color: #f5c400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-left: 5px solid #f5c400;
+    padding-left: 14px;
+    margin-bottom: 20px;
+}
+
+h3 {
+    font-family: 'Arial', sans-serif;
+    font-size: 1.2rem;
+    color: #f5c400;
+    margin: 18px 0 6px;
+}
+
+p {
+    color: #d4cdb0;
+    font-size: 1rem;
+    margin-bottom: 14px;
+}
+
+/* ── Species list ── */
+#species ol {
+    padding-left: 22px;
+    color: #e8e0c8;
+    font-family: 'Arial', sans-serif;
+}
+
+#species ol li {
+    margin-bottom: 16px;
+    font-size: 1.05rem;
+    color: #f5c400;
+    font-weight: bold;
+}
+
+#species ol li ul {
+    margin-top: 6px;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+#species ol li ul li {
+    color: #d4cdb0;
+    font-weight: normal;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+/* ── Aggression table ── */
+#aggression table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Arial', sans-serif;
+    margin-top: 10px;
+}
+
+#aggression th {
+    background-color: #f5c400;
+    color: #1a1a0e;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#aggression td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #3a3520;
+    color: #d4cdb0;
+    font-size: 0.95rem;
+}
+
+#aggression tr:nth-child(even) td {
+    background-color: #24200a;
+}
+
+/* ── Anchor link ── */
+.anchor-link {
+    display: inline-block;
+    margin: 10px 0 30px;
+    color: #f5c400;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border: 1px solid #f5c400;
+    padding: 6px 16px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.anchor-link:hover {
+    background-color: #f5c400;
+    color: #1a1a0e;
+}
+
+/* ── Video ── */
+#video-section .video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border: 3px solid #f5c400;
+    border-radius: 6px;
+    margin-top: 16px;
+}
+
+#video-section .video-wrapper iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+}
+
+/* ── Tableau ── */
+#tableau-section .tableau-wrapper {
+    margin-top: 16px;
+    border: 3px solid #f5c400;
+    border-radius: 6px;
+    overflow: hidden;
+    min-height: 500px;
+    background: #24200a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bfb89a;
+    font-family: 'Arial', sans-serif;
+    font-style: italic;
+}
+
+/* ── Footer ── */
+footer {
+    text-align: center;
+    padding: 28px;
+    background-color: #0e0e07;
+    border-top: 2px solid #f5c400;
+    color: #7a7050;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.85rem;
+    margin-top: 80px;
+}
